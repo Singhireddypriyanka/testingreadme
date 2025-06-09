@@ -1,55 +1,58 @@
-## Snowflake RBAC 
+## SAMDA Action Workflows repo
 
-This repository is designed to manage and automate the creation and configuration of core Snowflake components, including:
-  
-- Warehouses 
-- Databases & Schemas
-- Roles & Permissions
-- Service Accounts
+This repository is designed to manage the creation of common reusable GitHub Actions workflows, scripts, and Makefiles.
 
----
+## Workflows Overview 
 
-## How It Works: The Automated Workflow 
+This section provides a summary of the automated workflows used in this project. These workflows help to build, test, deploy, and manage the codebase.
 
-We use GitHub Actions to automatically test and apply any changes. The diagram below shows how this works, from a developer making a change to that change going live in Snowflake. This process ensures everything is checked and approved before it's deployed.
-
-<img width="839" alt="Automated Workflow Diagram" src="https://github.com/user-attachments/assets/66ce76b3-d26d-4944-a376-685345c23c34" />
-
----
-## Workflow Triggers
-
-The workflow is designed to respond to a variety of GitHub events, enabling a flexible and automated CI/CD pipeline:
-
-| Event     | Description                | 
+| Workflow Name     | Description            |
 | :-------- | :------------------------- |
-| `workflow_dispatch` | Manual trigger for CD pipeline with input parameters |
-| `push (non-main)` | 	CI build triggered on all branches except main |
-| `pull_request` | CI triggered on every PR (to any branch, including main) |
-| `schedule` | Manual Daily run at 2:30 AM UTC for maintenance tasks like stale PR checks |
-| `issues: edited` | Triggered when an issue is edited (used for open-source governance check) |
+| `build_action` | Prepares the environment and runs the makefile. |
+| `deploy-action` | Deploys a release version to a specific environment (dev, sandbox, stage, prod).|
+| `opensource-gov` | Updates a comment on an issue if the issue is edited and contains the OSG dependency comment. |
+| `release-action` | Reads the .bumpversion.cfg file and creates a release tag. |
+| `snowflake-deploy-action` | Deploys code to the selected Snowflake environment by triggering the `deploy_snowflake` step in makefile.common.  |
+| ` stale` | Marks pull requests as stale if there has been no activity for 15 days. |
 
-## Jobs Overview 
 
-The workflow contains multiple jobs, each scoped to a specific responsibility. Here's an overview of what each job does: 
+## Makefile Templates 
 
-| Job name     | Job Triggers            | Purpose            | Using resuable workflows from charlesschwab/samda-action-workflows          |
-| :-------- | :------------------------- | :------------------------- |:------------------------- |
-| `cd-workflow` | Manual trigger for CD pipeline with input parameters |  Deploy code to the selected snowflake environment |  `workflows/snowflake-deploy-action.yml` |
-| ` build-feature` | Push or PR to any non-main branch | Run setup and lint jobs from the `make.linux` file | `workflows/build-action.yml` |
-| `build-main` | PR to merge into main | Run setup and lint jobs from the `make.linux` file | `cworkflows/build-action.yml` |
-| `release-main` | After successful build-main (on PR merge to main) | read the  .bumpversion.cfg and release a tag | `workflows/release-action.yml` |
-| `check-version-bump` | PR targets main but is not yet merged | check and validate the .bumpversion.cfg fiel on main and PR | `workflows/validate-action.yml` |
-| ` mark-reviews` | An issue is edited and contains the OSG dependency comment | Update a comment on the issue | `workflows/opensource-gov.yml` |
-| ` stale` | Daily at 2:30 AM UTC | Marks PRs as stale if no activity for 15 days | NA |
+We have three different Makefile templates:
 
----
+| Makefile template name   | Path            |
+| :-------- | :------------------------- |
+| `application_template` | makefile_templates/application_templates/makefile.template |
+| `hashing_template` | makefile_templates/hashing_template/makefile.template |
+| `snowflake_template` | makefile_templates/snowflake_template/makefile.template |
 
-## Quick Commands for Developers (Makefile) 
-We have a set of simple commands to help developers get started, test their code, and deploy changes. These commands handle all the setup and cleanup automatically.
+## How to consume the reusable template 
 
-### Key Commands:
+- consuming workflow should be in a repository that has access to this repo (proper internal access).
+- Ensure required inputs and secrets are passed.
 
-* **`setup`**: Sets up the developer's environment with all the necessary tools.
-* **`clean`**: Removes temporary files to keep the project folder clean.
-* **`lint_sql`**: Checks our SQL code for errors and formatting issues.
-* **`deploy_sso_to_snowflake`**: Deploys single sign-on configurations to Snowflake.
+### Example Usage
+
+```
+name: Deploy Using Reusable Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        required: true
+        type: string
+      envname:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    uses: <owner>/<repo>/.github/workflows/<workflow-file>.yml@<version-or-branch>
+    with:
+      release_version: ${{ github.event.inputs.release_version }}
+      envname: ${{ github.event.inputs.envname }}
+      deploy_options: 'full'
+    secrets: inherit
+
+```
