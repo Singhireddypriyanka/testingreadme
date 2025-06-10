@@ -55,24 +55,35 @@ Reusable for structured deploy logic with project-specific commands.
 
 ### `build-action.yml`
 
-**Description:**  
-Standardizes building process by invoking make targets like `setup`, `lint`, or `build` using reusable Makefile templates.
+### Description
+This reusable workflow compiles and builds SAMDA projects using make-based automation. It integrates token-based GitHub authentication, submodule injection for shared makefile templates, and supports secure ProGet and GCP integration.
 
-**Usage:**  
-Used on PRs or merges to trigger build validation.
+### Usage
+To use this workflow, call it from another repository using `workflow_call` and provide the required inputs and secrets.
 
-**Inputs:**  
-- `build_file` – File to run (e.g., `makefile.linux`)
-- `build_options` – Options to be passed to make (e.g., `setup lint`)
+### Inputs
 
-**Secrets:**  
-- `GCP_SERVICE_ACCOUNT_KEY`
-- `PROGET_CA_CERT`
+- **build_file** (string, required): Makefile to be executed for the build (e.g., `makefile.linux`).
+- **build_options** (string, optional): Extra arguments passed to the `make` command.
 
-**Highlights:**
-- Dynamically injects Makefile submodules
-- Performs authentication with ProGet
-- Supports token-based private repo pulls
+### Secrets
+
+- **WPC_PRO_HOST** (required): ProGet host address for internal PyPI resolution.
+- **WPC_PRO_API_USER** (required): Username for ProGet API.
+- **WPC_PRO_API_SECRET** (required): Secret for ProGet API access.
+- **GITHUB_TOKEN** (required): Token for accessing private GitHub repositories.
+- **GCP_SERVICE_ACCOUNT_KEY** (required): JSON key for authenticating with GCP.
+- **PROGET_CA_CERT** (required): Certificate authority file for ProGet SSL.
+- **BASIC_APP_ID** (required): GitHub App ID for generating tokens.
+- **BASIC_APP_KEY** (required): Private key used with GitHub App to sign tokens.
+
+### Highlights
+
+- Cleans old or unused submodules before starting.
+- Dynamically injects reusable makefile templates via submodule.
+- Uses GitHub App authentication for secure token generation.
+- Authenticates and builds using secure credentials and make.
+
 
 ---
 
